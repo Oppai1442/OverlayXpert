@@ -1,4 +1,4 @@
-# OverlayXpert - Oppai [0.0.1]
+# OverlayXpert - Oppai [0.0.2]
 
 OverlayXpert is a lightweight overlay manager for Windows, designed for creating persistent overlays that can follow specific applications. It supports transparency, process linking, and easy customization.
 
