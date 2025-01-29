@@ -2,22 +2,22 @@ import sys
 import json
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QSlider,
                              QLabel, QColorDialog, QSpinBox)
-from PyQt5.QtGui import QColor, QCursor, QIcon
+from PyQt5.QtGui import QColor, QCursor, QIcon, QPainter, QPen, QBrush, QFont
 from PyQt5.QtCore import Qt, QTimer
 import psutil
 import win32gui
 import win32process
 
-
 class OverlayWidget(QWidget):
-    def __init__(self, manager, x=0, y=0, width=100, height=100, color=QColor(0, 0, 0), border=0, opacity=1.0, process="All"):
+    def __init__(self, manager, x=0, y=0, width=100, height=100, color=QColor(0, 0, 0), border=0, opacity=1.0, process="All", active=True):
         super().__init__()
         self.manager = manager
         self.setGeometry(x, y, width, height)
         self.color = color
         self.border = border
-        self.opacity = opacity  # Độ mờ
-        self.process = process  # Tên process được liên kết
+        self.opacity = opacity  
+        self.process = process  
+        self.active = active  
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.WindowTransparentForInput)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setMouseTracking(True)
@@ -29,24 +29,47 @@ class OverlayWidget(QWidget):
 
     def set_opacity(self, opacity):
         self.opacity = opacity
-        self.setWindowOpacity(opacity)  # Cập nhật độ mờ của cửa sổ
+        self.setWindowOpacity(opacity)  
+
+    def set_active(self, active):
+        self.active = active
+        if self.active:
+            self.show()
+        else:
+            self.hide()
+        self.manager.update_overlay_data(self)
 
     def set_edit_mode(self, is_editing):
         self.is_editing = is_editing
         flags = Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
         if not is_editing:
-            flags |= Qt.WindowTransparentForInput  # Nếu không chỉnh sửa thì overlay không nhận sự kiện chuột
+            flags |= Qt.WindowTransparentForInput  
         self.setWindowFlags(flags)
-        self.show()  # Phải gọi lại `show()` để áp dụng cờ mới
+        self.show()  
+
+    def get_contrast_text_color(self, bg_color):
+        """Tính toán màu chữ dựa trên độ sáng của màu nền."""
+        luminance = 0.299 * bg_color.red() + 0.587 * bg_color.green() + 0.114 * bg_color.blue()
+        return Qt.black if luminance > 128 else Qt.white  
 
     def paintEvent(self, event):
-        from PyQt5.QtGui import QPainter, QPen, QBrush
         painter = QPainter(self)
-        painter.setOpacity(self.opacity)  # Áp dụng opacity
+        painter.setOpacity(self.opacity)  
         painter.setBrush(QBrush(self.color))
         painter.setPen(QPen(self.color, self.border))
+
         rect = self.rect().adjusted(self.border, self.border, -self.border, -self.border)
         painter.drawRoundedRect(rect, 10, 10)
+
+        if self.manager:
+            overlay_index = self.manager.overlays.index(self) + 1  
+            text = f"ID: {overlay_index}"
+
+            text_color = self.get_contrast_text_color(self.color)  
+            painter.setPen(text_color)
+            painter.setFont(QFont("Arial", 12, QFont.Bold))  
+            text_rect = painter.boundingRect(rect, Qt.AlignCenter, text)  
+            painter.drawText(text_rect, Qt.AlignCenter, text)  
 
     def update_overlay(self, x, y, width, height, color, border):
         self.setGeometry(x, y, width, height)
@@ -56,7 +79,7 @@ class OverlayWidget(QWidget):
 
     def mousePressEvent(self, event):
         if self.is_editing:
-            self.manager.timer.stop()  # Dừng kiểm tra process tạm thời
+            self.manager.timer.stop()  
             if event.button() == Qt.LeftButton:
                 self.drag_start_pos = event.pos()
                 margin = 10
@@ -116,11 +139,8 @@ class OverlayWidget(QWidget):
                 self.resize_direction = None
                 self.setCursor(QCursor(Qt.ArrowCursor))
 
-            # Chỉ lưu dữ liệu sau khi hoàn tất drag hoặc resize
             self.manager.update_overlay_data(self)
-            self.manager.timer.start()  # Kích hoạt lại kiểm tra process
-
-
+            self.manager.timer.start()  
 
     def resizeEvent(self, event):
         if self.is_editing:
@@ -163,13 +183,11 @@ class OverlayWidget(QWidget):
         if "bottom" in self.resize_direction:
             new_height = max(10, event.y())
 
-        # Chỉ cập nhật layout khi cần
         if (
             new_x != self.x() or new_y != self.y() or
             new_width != self.width() or new_height != self.height()
         ):
             self.setGeometry(new_x, new_y, new_width, new_height)
-
 
     def get_resize_cursor(self, direction):
         return {
@@ -183,14 +201,12 @@ class OverlayWidget(QWidget):
             "bottom": QCursor(Qt.SizeVerCursor)
         }.get(direction, QCursor(Qt.ArrowCursor))
 
-
 class OverlayManager(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("OverlayXpert - Oppai [0.0.1]")
         self.setGeometry(100, 100, 600, 400)
         self.setWindowIcon(QIcon("icon.ico"))
-
 
         self.overlays = []
         self.overlay_data = []
@@ -209,8 +225,8 @@ class OverlayManager(QMainWindow):
 
         layout = QVBoxLayout()
 
-        self.overlay_table = QTableWidget(0, 3)
-        self.overlay_table.setHorizontalHeaderLabels(["ID", "App", "Process"])
+        self.overlay_table = QTableWidget(0, 5)
+        self.overlay_table.setHorizontalHeaderLabels(["ID", "App", "Process", "Status", "Active"])
         self.overlay_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.overlay_table.cellDoubleClicked.connect(self.open_editor)
         layout.addWidget(self.overlay_table)
@@ -233,6 +249,9 @@ class OverlayManager(QMainWindow):
         central_widget.setLayout(layout)
 
     def open_editor(self, row, column):
+        if row < 0 or row >= len(self.overlays):  
+            return  
+
         overlay = self.overlays[row]
         data = self.overlay_data[row]
         editor = OverlayEditor(self, overlay, data)
@@ -253,6 +272,7 @@ class OverlayManager(QMainWindow):
             "border": overlay.border,
             "opacity": overlay.opacity,
             "process": "All",
+            "active": True,
         }
         self.overlay_data.append(overlay_data)
 
@@ -276,7 +296,6 @@ class OverlayManager(QMainWindow):
         for overlay in self.overlays:
             overlay.set_edit_mode(is_editing)
 
-
     def save_to_json(self):
         with open("overlays.json", "w") as file:
             json.dump(self.overlay_data, file, indent=4)
@@ -298,7 +317,10 @@ class OverlayManager(QMainWindow):
                 except psutil.NoSuchProcess:
                     pass
 
-            for data in self.overlay_data:
+            self.overlay_table.setRowCount(0)
+            self.overlays.clear()
+
+            for index, data in enumerate(self.overlay_data):
                 overlay = OverlayWidget(
                     self,
                     x=data["x"],
@@ -309,26 +331,46 @@ class OverlayManager(QMainWindow):
                     border=data["border"],
                     opacity=data.get("opacity", 1.0),
                     process=data.get("process", "All"),
+                    active=data.get("active", True)
                 )
-                
-                # Kiểm tra process trước khi hiển thị
+
+                self.overlays.append(overlay)  
+
                 process = data.get("process", "All")
-                if process == "All" or process == current_process:
+                if (process == "All" or process == current_process) and overlay.active:
                     overlay.show()
                 else:
                     overlay.hide()
 
-                self.overlays.append(overlay)
-
                 row = self.overlay_table.rowCount()
                 self.overlay_table.insertRow(row)
-                self.overlay_table.setItem(row, 0, QTableWidgetItem(str(len(self.overlays))))
+                self.overlay_table.setItem(row, 0, QTableWidgetItem(str(index + 1)))  
                 self.overlay_table.setItem(row, 1, QTableWidgetItem("Overlay"))
                 self.overlay_table.setItem(row, 2, QTableWidgetItem(process))
 
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
+                status_item = QTableWidgetItem("Active" if data.get("active", True) else "Disabled")
+                status_item.setTextAlignment(Qt.AlignCenter)
+                status_item.setForeground(Qt.green if data.get("active", True) else Qt.red)
+                self.overlay_table.setItem(row, 3, status_item)
 
+                toggle_btn = QPushButton("Toggle")
+                toggle_btn.clicked.connect(lambda _, r=row: self.toggle_overlay_status(r))
+                self.overlay_table.setCellWidget(row, 4, toggle_btn)
+
+            print("Overlays loaded:", len(self.overlays))  
+
+        except (FileNotFoundError, json.JSONDecodeError):
+            print("JSON file not found or corrupt!")
+
+    def toggle_overlay_status(self, row):
+        overlay = self.overlays[row]
+        overlay.set_active(not overlay.active)  
+
+        status_item = self.overlay_table.item(row, 3)
+        status_item.setText("Active" if overlay.active else "Disabled")
+        status_item.setForeground(Qt.green if overlay.active else Qt.red)
+
+        self.save_to_json()
 
     def check_processes(self):
         hwnd = win32gui.GetForegroundWindow()
@@ -345,14 +387,12 @@ class OverlayManager(QMainWindow):
 
         for i, overlay in enumerate(self.overlays):
             process = self.overlay_data[i].get("process", "All")
-            if process == "All":
-                continue  # Không thay đổi overlay nếu process là "All"
+            should_show = overlay.active and (process == "All" or process == current_process)
 
-            if process == current_process and not overlay.isVisible():
-                overlay.show()  # Chỉ hiển thị nếu nó đang bị ẩn
-            elif process != current_process and overlay.isVisible():
-                overlay.hide()  # Chỉ ẩn nếu nó đang được hiển thị
-
+            if should_show and not overlay.isVisible():  
+                overlay.show()  
+            elif not should_show and overlay.isVisible():  
+                overlay.hide()  
 
     def update_overlay_data(self, overlay):
         index = self.overlays.index(overlay)
@@ -364,16 +404,15 @@ class OverlayManager(QMainWindow):
             "color": overlay.color.name(),
             "border": overlay.border,
             "process": overlay.process,
-            "opacity": overlay.opacity
+            "opacity": overlay.opacity,
+            "active": overlay.active
         }
         self.save_to_json()
-    
+
     def update_overlay_row(self, overlay, process_name):
         if overlay in self.overlays:
             index = self.overlays.index(overlay)
             self.overlay_table.setItem(index, 2, QTableWidgetItem(process_name))
-
-
 
 class OverlayEditor(QWidget):
     def __init__(self, manager, overlay, data):
@@ -454,7 +493,7 @@ class OverlayEditor(QWidget):
 
     def update_process(self, process_name):
         self.data["process"] = process_name
-        self.manager.update_overlay_row(self.overlay, process_name)  # Gọi cập nhật bảng
+        self.manager.update_overlay_row(self.overlay, process_name)  
         self.overlay.process = process_name
         self.manager.save_to_json()
 
@@ -489,7 +528,6 @@ class OverlayEditor(QWidget):
                 processes.append(p.info["name"])
 
         return list(set(processes))
-    
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
