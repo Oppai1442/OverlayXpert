@@ -1,4 +1,4 @@
-# OverlayXpert - Oppai [0.0.3]
+# OverlayXpert - Oppai [0.0.4]
 
 OverlayXpert is a lightweight overlay manager for Windows, designed for creating persistent overlays that can follow specific applications. It supports transparency, process linking, and easy customization.
 
@@ -58,7 +58,7 @@ sha256sum dist/OverlayXpert
 
 ### **Expected Hash:**
 ```
-E94C7EE5EEEE22D9C5F25A138BC94CCA94ADF61390C2C824CDC05EB2024FA813
+For some reason, the hash always produces different results, will fix later
 ```
 
 ## 📁 Configuration
