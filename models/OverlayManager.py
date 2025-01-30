@@ -14,7 +14,7 @@ from utils.helpers import shouldShowOverlay
 class OverlayManager(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OverlayXpert - Oppai [0.0.2]")
+        self.setWindowTitle("OverlayXpert - Oppai [0.0.3]")
         self.setGeometry(100, 100, 600, 400)
         self.setWindowIcon(QIcon(":/icon.ico"))
 
