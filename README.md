@@ -1,4 +1,4 @@
-# OverlayXpert - Oppai [0.0.2]
+# OverlayXpert - Oppai [0.0.3]
 
 OverlayXpert is a lightweight overlay manager for Windows, designed for creating persistent overlays that can follow specific applications. It supports transparency, process linking, and easy customization.
 
@@ -33,7 +33,7 @@ python app.py
 To create a standalone `.exe` for Windows:
 
 ```bash
-pyinstaller --onefile --noconsole --icon=icon.ico --name OverlayXpert app.py
+pyinstaller --clean --onefile --noconsole --icon=icon.ico --add-data "icon.ico;." --name OverlayXpert app.py
 ```
 
 - `--onefile`: Creates a single executable file.
@@ -58,7 +58,7 @@ sha256sum dist/OverlayXpert
 
 ### **Expected Hash:**
 ```
-4931488D5F3A7167703E29C8C08B72A20A3FFFBE63E5A7F5B39141F44256F261
+7BB498610638297EA6C50DC4795763DB4623B16B1B5622925527C3A8219EAC0E
 ```
 
 ## 📁 Configuration
