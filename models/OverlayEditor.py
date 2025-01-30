@@ -59,7 +59,7 @@ class OverlayEditor(QWidget):
         self.process_combo.addItems(self.get_process_list())
         self.process_combo.setCurrentText(data.get("process", "All"))
         self.process_combo.currentTextChanged.connect(self.update_process)
-        layout.addWidget(QLabel("Process:"))
+        layout.addWidget(QLabel("Restricted Process:"))
         layout.addWidget(self.process_combo)
 
         self.color_btn = QPushButton("Choose Color")
