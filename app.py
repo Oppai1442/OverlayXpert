@@ -4,9 +4,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton, QV
                              QLabel, QColorDialog, QSpinBox)
 from PyQt5.QtGui import QColor, QCursor, QIcon, QPainter, QPen, QBrush, QFont
 from PyQt5.QtCore import Qt, QTimer
+from resources import *
 import psutil
 import win32gui
 import win32process
+
 
 class OverlayWidget(QWidget):
     def __init__(self, manager, x=0, y=0, width=100, height=100, color=QColor(0, 0, 0), border=0, opacity=1.0, process="All", active=True):
@@ -206,7 +208,7 @@ class OverlayManager(QMainWindow):
         super().__init__()
         self.setWindowTitle("OverlayXpert - Oppai [0.0.2]")
         self.setGeometry(100, 100, 600, 400)
-        self.setWindowIcon(QIcon("icon.ico"))
+        self.setWindowIcon(QIcon(":/icon.ico"))
 
         self.overlays = []
         self.overlay_data = []
