@@ -39,6 +39,7 @@ class OverlayManager(QMainWindow):
         self.overlay_table.setHorizontalHeaderLabels(["ID", "App", "Process", "Status", "Active"])
         self.overlay_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.overlay_table.cellDoubleClicked.connect(self.open_editor)
+        self.overlay_table.verticalHeader().setVisible(False)
         layout.addWidget(self.overlay_table)
 
         controls_layout = QHBoxLayout()
@@ -87,9 +88,22 @@ class OverlayManager(QMainWindow):
         self.overlay_data.append(overlay_data)
 
         self.save_to_json()
+        
         row = self.overlay_table.rowCount()
         self.overlay_table.insertRow(row)
         self.overlay_table.setItem(row, 0, QTableWidgetItem(str(len(self.overlays))))
+        
+        self.overlay_table.setItem(row, 1, QTableWidgetItem("Overlay"))
+        self.overlay_table.setItem(row, 2, QTableWidgetItem(overlay.process))
+
+        status_item = QTableWidgetItem("Active" if overlay_data.get("active", True) else "Disabled")
+        status_item.setTextAlignment(Qt.AlignCenter)
+        status_item.setForeground(Qt.green if overlay_data.get("active", True) else Qt.red)
+        self.overlay_table.setItem(row, 3, status_item)
+
+        toggle_btn = QPushButton("Toggle")
+        toggle_btn.clicked.connect(lambda _, r=row: self.toggle_overlay_status(r))
+        self.overlay_table.setCellWidget(row, 4, toggle_btn)
 
     def delete_overlay(self):
         selected_row = self.overlay_table.currentRow()
@@ -114,18 +128,6 @@ class OverlayManager(QMainWindow):
         try:
             with open("overlays.json", "r") as file:
                 self.overlay_data = json.load(file)
-
-            hwnd = win32gui.GetForegroundWindow()
-            pid = None
-            if hwnd:
-                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-
-            current_process = None
-            if pid:
-                try:
-                    current_process = psutil.Process(pid).name()
-                except psutil.NoSuchProcess:
-                    pass
 
             self.overlay_table.setRowCount(0)
             self.overlays.clear()
