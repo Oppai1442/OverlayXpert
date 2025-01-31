@@ -5,18 +5,14 @@ from PyQt5.QtCore import Qt, QTimer
 from models.OverlayEditor import OverlayEditor
 from models.OverlayWidget import OverlayWidget
 from resources import *
-import psutil
-import win32gui
-import win32process
 
 from utils.helpers import shouldShowOverlay
 
 class OverlayManager(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OverlayXpert - Oppai [0.0.4]")
+        self.setWindowTitle("OverlayXpert - Oppai [0.0.5]")
         self.setGeometry(100, 100, 600, 400)
-        self.setWindowIcon(QIcon(":/icon.ico"))
 
         self.overlays = []
         self.overlay_data = []
@@ -37,6 +33,7 @@ class OverlayManager(QMainWindow):
 
         self.overlay_table = QTableWidget(0, 5)
         self.overlay_table.setHorizontalHeaderLabels(["ID", "App", "Process", "Status", "Active"])
+        self.overlay_table.horizontalHeader().setSectionsClickable(False)
         self.overlay_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.overlay_table.cellDoubleClicked.connect(self.open_editor)
         self.overlay_table.verticalHeader().setVisible(False)
@@ -51,7 +48,8 @@ class OverlayManager(QMainWindow):
         delete_overlay_btn.clicked.connect(self.delete_overlay)
         controls_layout.addWidget(delete_overlay_btn)
 
-        self.edit_toggle_btn = QPushButton("Toggle Edit")
+        self.edit_toggle_btn = QPushButton("Editing Mode: OFF")
+        self.edit_toggle_btn.setStyleSheet("color: red; font-weight: bold;")
         self.edit_toggle_btn.setCheckable(True)
         self.edit_toggle_btn.clicked.connect(self.toggle_edit_mode)
         controls_layout.addWidget(self.edit_toggle_btn)
@@ -66,7 +64,7 @@ class OverlayManager(QMainWindow):
         overlay = self.overlays[row]
         data = self.overlay_data[row]
         editor = OverlayEditor(self, overlay, data)
-        editor.show()
+        editor.exec_()
         self.editors.append(editor)
 
     def add_overlay(self):
@@ -105,6 +103,10 @@ class OverlayManager(QMainWindow):
         toggle_btn.clicked.connect(lambda _, r=row: self.toggle_overlay_status(r))
         self.overlay_table.setCellWidget(row, 4, toggle_btn)
 
+        is_editing = self.edit_toggle_btn.isChecked()
+        for overlay in self.overlays:
+            overlay.set_edit_mode(is_editing)
+
     def delete_overlay(self):
         selected_row = self.overlay_table.currentRow()
         if selected_row >= 0:
@@ -117,6 +119,12 @@ class OverlayManager(QMainWindow):
 
     def toggle_edit_mode(self):
         is_editing = self.edit_toggle_btn.isChecked()
+        if is_editing:
+            self.edit_toggle_btn.setText("Editing Mode: ON")
+            self.edit_toggle_btn.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            self.edit_toggle_btn.setText("Editing Mode: OFF")
+            self.edit_toggle_btn.setStyleSheet("color: red; font-weight: bold;")
         for overlay in self.overlays:
             overlay.set_edit_mode(is_editing)
 
