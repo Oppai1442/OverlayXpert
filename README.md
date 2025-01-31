@@ -33,7 +33,7 @@ python app.py
 To create a standalone `.exe` for Windows:
 
 ```bash
-pyinstaller --clean --onefile --noconsole --icon=icon.ico --add-data "icon.ico;." --name OverlayXpert app.py
+set SOURCE_DATE_EPOCH=1710000000 && pyinstaller --clean --onefile --noconsole --icon=icon.ico --name OverlayXpert app.py
 ```
 
 - `--onefile`: Creates a single executable file.
@@ -58,7 +58,7 @@ sha256sum dist/OverlayXpert
 
 ### **Expected Hash:**
 ```
-For some reason, the hash always produces different results, will fix later
+E584EF761DFA085D3020B97400D144A5607C9C0C5195E2D282238A4912A2BD61
 ```
 
 ## 📁 Configuration
