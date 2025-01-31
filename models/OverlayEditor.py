@@ -1,21 +1,18 @@
-from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QComboBox, QSlider, QLabel, QColorDialog, QSpinBox)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QDialog, QPushButton, QVBoxLayout, QComboBox, QSlider, QLabel, QColorDialog, QSpinBox)
 from PyQt5.QtCore import Qt
-from resources import *
 import psutil
 import win32gui
 import win32process
 
-class OverlayEditor(QWidget):
+class OverlayEditor(QDialog):
     def __init__(self, manager, overlay, data):
-        super().__init__()
+        super().__init__(manager)
         self.manager = manager
         self.overlay = overlay
         self.data = data
 
         self.setWindowTitle("Edit Overlay")
         self.setGeometry(200, 200, 300, 300)
-        self.setWindowIcon(QIcon(":/icon.ico"))
 
         layout = QVBoxLayout()
 
