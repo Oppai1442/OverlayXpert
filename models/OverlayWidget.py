@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (QWidget)
 from PyQt5.QtGui import QColor, QCursor, QPainter, QPen, QBrush, QFont
 from PyQt5.QtCore import Qt
+from models.OverlayEditor import OverlayEditor
 
 from utils.helpers import shouldShowOverlay
 
@@ -135,6 +136,11 @@ class OverlayWidget(QWidget):
 
             self.manager.update_overlay_data(self)
             self.manager.timer.start()  
+
+    def mouseDoubleClickEvent(self, event):
+        if self.is_editing:
+            editor = OverlayEditor(self.manager, self, self.manager.overlay_data[self.manager.overlays.index(self)])
+            editor.exec_()
 
     def resizeEvent(self, event):
         if self.is_editing:
